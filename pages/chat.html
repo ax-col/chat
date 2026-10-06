@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat global · NOVA</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Unbounded:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/main.css?v=4"><link rel="stylesheet" href="../css/app.css?v=4"><link rel="stylesheet" href="../css/chat.css?v=4">
+<style>html{background:#050507;color:#fff}</style><script>addEventListener("load",function(){if(!getComputedStyle(document.documentElement).getPropertyValue("--bg").trim()){document.querySelectorAll("link[href*=\"css/\"]").forEach(function(l){var n=document.createElement("link");n.rel="stylesheet";n.href=l.getAttribute("href").split("?")[0]+"?r="+Date.now();document.head.appendChild(n)})}})</script>
+</head><body>
+<main class="page">
+<h2>Chat global</h2><p class="muted">Estás conectado como <b id="who"></b>. Todos los usuarios comparten esta sala en tiempo real.</p>
+<div class="chat rgb"><div class="chat-top"><span class="dot" id="status"></span><span id="statusText">Conectando…</span></div>
+<ul id="messages" class="messages"></ul>
+<form id="chatForm" class="chat-form"><input class="in" id="text" maxlength="300" placeholder="Escribe un mensaje" aria-label="Mensaje" autocomplete="off" required><button type="submit" style="--c:#ff1744">Enviar</button></form></div>
+</main>
+<script src="../js/config.js?v=4"></script><script src="../js/store.js?v=4"></script><script src="../js/nav.js?v=4"></script><script src="../js/touch.js?v=4"></script>
+<script src="../js/chat.js?v=4"></script>
+</body></html>

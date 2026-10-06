@@ -1,0 +1,20 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      ".read": true,
+      "$u": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['name','lat','lng','place','joined']) && newData.child('name').isString() && newData.child('name').val().matches(/^[a-zA-Z0-9_]{3,16}$/) && $u === newData.child('name').val().toLowerCase() && newData.child('lat').isNumber() && newData.child('lng').isNumber() && newData.child('place').isString() && newData.child('place').val().length < 100 && (!newData.hasChild('photo') || (newData.child('photo').isString() && newData.child('photo').val().length < 15000))"
+      }
+    },
+    "messages": {
+      ".read": true,
+      "$m": {
+        ".write": "!data.exists()",
+        ".validate": "newData.hasChildren(['n','t','ts']) && newData.child('n').isString() && newData.child('n').val().length >= 3 && newData.child('n').val().length <= 16 && newData.child('t').isString() && newData.child('t').val().length >= 1 && newData.child('t').val().length <= 300 && newData.child('ts').isNumber()"
+      }
+    }
+  }
+}

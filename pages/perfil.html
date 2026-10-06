@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perfil · NOVA</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Unbounded:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/main.css?v=4"><link rel="stylesheet" href="../css/app.css?v=4">
+<style>html{background:#050507;color:#fff}</style><script>addEventListener("load",function(){if(!getComputedStyle(document.documentElement).getPropertyValue("--bg").trim()){document.querySelectorAll("link[href*=\"css/\"]").forEach(function(l){var n=document.createElement("link");n.rel="stylesheet";n.href=l.getAttribute("href").split("?")[0]+"?r="+Date.now();document.head.appendChild(n)})}})</script>
+</head><body>
+<main class="page">
+<h2>Tu perfil</h2><p class="muted">Cambia tu usuario, tu ubicación y tu foto.</p>
+<div class="panel rgb">
+<button type="button" class="avatar rgb" id="avatar" style="--c:#00e676" aria-label="Cambiar foto de perfil"></button><input type="file" id="file" accept="image/*" hidden>
+<label for="name"><b>Nombre de usuario</b></label><input class="in" id="name" maxlength="16" autocomplete="off">
+<b>Ubicación</b><div id="picker"></div>
+<button class="btn main" id="save" type="button">Guardar cambios</button><p id="msg" class="err"></p></div>
+<h2 style="margin-top:34px">Tu infografía</h2>
+<div class="stats" style="margin-top:16px">
+<div class="stat rgb" style="--c:#ff1744"><b id="s-rank">–</b>tu número de registro</div>
+<div class="stat rgb" style="--c:#00e676"><b id="s-total">–</b>usuarios en total</div>
+<div class="stat rgb" style="--c:#2979ff"><b id="s-days">–</b>días en la comunidad</div>
+<div class="stat rgb" style="--c:#d500f9"><b id="s-msgs">–</b>mensajes enviados</div></div>
+<div class="panel rgb"><b>Perfil completo</b><div class="donut" id="donut"><span></span></div>
+<b>Tu país en la comunidad</b><div class="bar"><i id="bar"></i></div><p class="hint" id="bar-t"></p></div>
+<button class="btn danger" id="del" type="button" style="margin-top:22px">Eliminar mi cuenta</button>
+</main>
+<script src="../js/config.js?v=4"></script><script src="../js/store.js?v=4"></script><script src="../js/nav.js?v=4"></script><script src="../js/touch.js?v=4"></script>
+<script src="../js/geo.js?v=4"></script><script src="../js/profile.js?v=4"></script>
+</body></html>

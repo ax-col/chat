@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NOVA · Regístrate</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Unbounded:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css?v=4"><link rel="stylesheet" href="css/app.css?v=4">
+<style>html{background:#050507;color:#fff}</style><script>addEventListener("load",function(){if(!getComputedStyle(document.documentElement).getPropertyValue("--bg").trim()){document.querySelectorAll("link[href*=\"css/\"]").forEach(function(l){var n=document.createElement("link");n.rel="stylesheet";n.href=l.getAttribute("href").split("?")[0]+"?r="+Date.now();document.head.appendChild(n)})}})</script>
+</head><body>
+<main class="reg">
+  <h1 class="title">NOVA <em>GLOBAL</em></h1>
+  <p class="muted" style="margin:0">Crea tu usuario único para entrar. Es obligatorio y solo se hace una vez.</p>
+  <p class="demo" id="demo" hidden>Modo demo: sin base de datos conectada, los usuarios solo existen en este dispositivo. Configura Firebase en js/config.js para que sea global.</p>
+  <form class="form rgb" id="reg" novalidate>
+    <label for="user">Nombre de usuario</label>
+    <input class="in" id="user" maxlength="16" placeholder="ej. luna_77" autocomplete="off" required>
+    <label>Tu ubicación <span class="hint">(para tu pin en el mapa)</span></label>
+    <div id="picker"></div>
+    <button class="btn main" id="go" type="submit">Registrarme y entrar</button>
+    <p class="err" id="err" role="alert"></p>
+  </form>
+  <div class="locked" aria-label="Secciones que se desbloquean al registrarte">
+    <div class="card rgb" style="--c:#ff1744">Chat<small>sala global</small></div>
+    <div class="card rgb" style="--c:#00c853">Mapa<small>pines</small></div>
+    <div class="card rgb" style="--c:#2979ff">Perfil<small>tu panel</small></div>
+    <div class="card rgb" style="--c:#d500f9">Info<small>proyecto</small></div>
+  </div>
+</main>
+<script src="js/config.js?v=4"></script><script src="js/store.js?v=4"></script><script src="js/geo.js?v=4"></script><script src="js/touch.js?v=4"></script><script src="js/register.js?v=4"></script>
+</body></html>
