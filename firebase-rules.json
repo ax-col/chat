@@ -15,6 +15,13 @@
         ".write": "!data.exists()",
         ".validate": "newData.hasChildren(['n','t','ts']) && newData.child('n').isString() && newData.child('n').val().length >= 3 && newData.child('n').val().length <= 16 && newData.child('t').isString() && newData.child('t').val().length >= 1 && newData.child('t').val().length <= 300 && newData.child('ts').isNumber()"
       }
+    },
+    "roles": {
+      ".read": true,
+      "$u": {
+        ".write": "auth != null && auth.uid === 'QI70rO20XlTmGbLFnGKstBYKDJu2'",
+        ".validate": "newData.isString() && (newData.val() === 'OWNER' || newData.val() === 'ADMIN' || newData.val() === 'MOD')"
+      }
     }
   }
 }
