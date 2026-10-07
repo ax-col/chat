@@ -15,3 +15,20 @@ Límite gratis de Firebase: 100 conexiones simultáneas (cada chat abierto cuent
 - **GitHub Pages**: sube la carpeta a un repo → Settings → Pages.
 - **Cloudflare Pages**: sube la carpeta o conecta el repo.
 Debe abrirse por **https** para que el GPS del navegador funcione.
+
+## 3. Roles y panel de administración (seguro)
+Los roles (OWNER, ADMIN, MOD, USER) se guardan en `/roles`. Solo tu cuenta de Firebase Authentication puede cambiarlos; la contraseña NUNCA va en el código ni en GitHub.
+1. Firebase → **Authentication → Comenzar → Método de acceso → Correo/contraseña → Habilitar**.
+2. **Authentication → Usuarios → Agregar usuario**: correo `tuusuario@nova-admin.app` (tu usuario de la página en minúsculas) y una contraseña NUEVA y larga.
+3. Copia el **UID de usuario** de esa fila.
+4. **Realtime Database → Reglas**: pega `firebase-rules.json` y cambia `PEGA_AQUI_EL_UID_DEL_OWNER` por ese UID → **Publicar**.
+5. **Configuración del proyecto (engranaje) → General → Clave de API web** → pégala en `js/config.js` → `auth.apiKey`.
+6. En `js/config.js` → `auth.staff` pon tu usuario en minúsculas (ej. `['andrex']`).
+7. (Recomendado) Authentication → Configuración → Acciones del usuario → desactiva "Habilitar creación (registro)".
+8. Regístrate en la página con ese usuario → Perfil → botón ⚙ → contraseña → asígnate OWNER.
+
+### Dueño fijo
+En `js/config.js` → `auth.owners` están los usuarios que SIEMPRE se muestran como OWNER (por defecto `AndreX`). Cambiar roles de otros sigue exigiendo la contraseña de Firebase Authentication. No borres la cuenta del dueño: otra persona podría registrar ese nombre.
+
+### Correo del administrador
+En `js/config.js` → `auth.emails` va el correo con el que creaste al usuario en Firebase Authentication (ej. `andrex: 'ax@auth.com'`). Si no aparece ahí, se usa `usuario@nova-admin.app`.

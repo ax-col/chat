@@ -5,6 +5,7 @@
   const layer = L.layerGroup().addTo(map), colors = ['#ff1744', '#00e676', '#2979ff', '#d500f9', '#00e5ff', '#ff6d00'];
   const hash = s => [...s].reduce((a, c) => a * 31 + c.charCodeAt(0) >>> 0, 7);
   async function draw() {
+    try { await Roles.load(); } catch {}
     let users = []; try { users = await Store.all(); } catch {}
     if (!users.some(u => u.name.toLowerCase() === me.name.toLowerCase())) users.push(me);
     document.getElementById('count').textContent = users.length + (users.length === 1 ? ' persona registrada' : ' personas registradas');
@@ -17,7 +18,7 @@
       if (u.photo && u.photo.startsWith('data:image/')) { const im = document.createElement('img'); im.src = u.photo; im.alt = ''; box.append(im); }
       const n = document.createElement('b'); n.textContent = '@' + u.name + (mine ? ' (tú)' : '');
       const p = document.createElement('small'); p.textContent = u.place || '';
-      box.append(n, p);
+      box.append(n, p, Roles.badge(Roles.of(u.name)));
       L.marker([u.lat + jit(3), u.lng + jit(9)], { icon }).bindPopup(box).addTo(layer);
     });
   }

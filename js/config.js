@@ -6,7 +6,10 @@ window.NOVA = {
   // Panel de roles (seguro, con Firebase Authentication). Guía: README.md, sección 3.
   auth: {
     apiKey: 'AIzaSyB15ghoM-diGu86QaxG8V64emBxDf-eZIg',              // "Clave de API web" de Firebase (es pública por diseño, no es un secreto)
-    staff: ['AndreX']        // usuarios (en minúsculas) que ven el botón del panel
+    // Correo de Firebase Authentication de cada administrador (usuario en minúsculas → correo).
+    emails: { andrex: 'ax@auth.com' },
+    owners: ['AndreX'],      // dueños fijos: siempre se muestran como OWNER (no hace falta tocar la base de datos)
+    staff: ['AndreX']        // usuarios que ven el botón ⚙ del panel (igual deben poner su contraseña)
   },
   chat: { server: 'https://ntfy.sh', room: 'nova-global-sala-x7k2', history: '12h' },
   about: {

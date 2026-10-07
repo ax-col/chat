@@ -12,7 +12,7 @@
   async function login(pw) {
     const r = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${A.apiKey}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: `${me.name.toLowerCase()}@nova-admin.app`, password: pw, returnSecureToken: true })
+      body: JSON.stringify({ email: (A.emails && A.emails[me.name.toLowerCase()]) || `${me.name.toLowerCase()}@nova-admin.app`, password: pw, returnSecureToken: true })
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(String(j.error && j.error.message || '').startsWith('TOO_MANY') ? 'many' : r.status === 400 ? 'bad' : 'net');
@@ -72,6 +72,7 @@
     const paint = () => slot.replaceChildren(Roles.badge(Roles.of(u.name))); paint();
     const sel = document.createElement('select'); sel.className = 'in sel'; sel.setAttribute('aria-label', 'Rol de ' + u.name);
     Roles.list.forEach(r => { const o = document.createElement('option'); o.value = r; o.textContent = r; sel.append(o); }); sel.value = Roles.of(u.name);
+    if (Roles.fixed(u.name)) { sel.disabled = true; sel.title = 'Dueño fijo (js/config.js)'; }
     sel.onchange = async () => {
       sel.disabled = true;
       try { await setRole(u.name, sel.value); paint(); status.textContent = `@${u.name} ahora es ${sel.value}`; }
@@ -80,7 +81,7 @@
         if (e.message === 'auth') { sessionStorage.removeItem('nova-admin'); loginView(); $('amsg').textContent = 'Sin permiso. Inicia sesión de nuevo o revisa el UID en las reglas.'; }
         else status.textContent = 'No se pudo guardar. Intenta de nuevo.';
       }
-      sel.disabled = false;
+      sel.disabled = Roles.fixed(u.name);
     };
     li.append(av, mid, sel); return li;
   }

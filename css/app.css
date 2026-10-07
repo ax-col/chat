@@ -43,3 +43,45 @@
 .info h3{font:700 1.1rem 'Unbounded',sans-serif;margin-bottom:8px;color:var(--c)}
 .info li{margin-left:20px}.info p{margin:6px 0}
 .flag{width:72px;border-radius:6px;box-shadow:0 0 18px var(--b);margin-bottom:8px}
+
+/* ===== Roles: borde giratorio (fuera) + letras con degradado (dentro) + brillo, distinto por rol ===== */
+.who{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.role{--p:#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00;--g1:#f00;--g2:#0f0;--g3:#00f;--sp:2.2s;position:relative;display:inline-flex;overflow:hidden;padding:2px 11px;border-radius:999px;border:2px solid transparent;vertical-align:middle;
+background:linear-gradient(#0b0b10,#0b0b10) padding-box,conic-gradient(from var(--a),var(--p)) border-box;animation:spin var(--sp) linear infinite,roleglow calc(var(--sp)*2) linear infinite}
+.role i{font:800 .68rem/1.5 'Outfit',sans-serif;font-style:normal;letter-spacing:.1em;color:#fff;background:linear-gradient(90deg,var(--p));background-size:300% 100%;-webkit-background-clip:text;background-clip:text;animation:flow calc(var(--sp)*1.2) linear infinite}
+@supports ((-webkit-background-clip:text) or (background-clip:text)){.role i{color:transparent}}
+@keyframes roleglow{0%,100%{box-shadow:0 0 10px var(--g1)}33%{box-shadow:0 0 15px var(--g2)}66%{box-shadow:0 0 15px var(--g3)}}
+/* OWNER: arcoíris completo + destello que barre la insignia */
+.r-owner::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.65) 50%,transparent 65%);transform:translateX(-130%);animation:shine 2.4s ease-in-out infinite}
+.r-owner i{filter:drop-shadow(0 0 4px rgba(255,255,255,.7))}
+@keyframes shine{60%,100%{transform:translateX(130%)}}
+/* ADMIN: fuego rojo-naranja-magenta con parpadeo */
+.r-admin{--p:#ff1744,#ff6d00,#ffea00,#ff1744,#ff00aa,#ff1744;--g1:#ff1744;--g2:#ff6d00;--g3:#ff00aa;--sp:1.8s}
+.r-admin i{animation:flow 2.2s linear infinite,fire .8s ease-in-out infinite}
+@keyframes fire{0%,100%{filter:brightness(1)}50%{filter:brightness(1.5) drop-shadow(0 0 4px #ff6d00)}}
+/* MOD: verde-cian-azul con línea de escaneo */
+.r-mod{--p:#00e676,#00e5ff,#2979ff,#00e5ff,#00e676;--g1:#00e676;--g2:#00e5ff;--g3:#2979ff;--sp:3s}
+.r-mod::after{content:"";position:absolute;top:0;bottom:0;left:-4px;width:2px;background:#fff;opacity:.8;box-shadow:0 0 8px #00e5ff;animation:scan 2.4s linear infinite}
+@keyframes scan{to{left:calc(100% + 4px)}}
+/* USER: azul-violeta, movimiento lento y calmado */
+.r-user{--p:#2979ff,#7c4dff,#2979ff,#00b8d4,#2979ff;--g1:#2979ff;--g2:#7c4dff;--g3:#00b8d4;--sp:6s}
+.msg[data-role=OWNER]{border-left-color:#ffea00;box-shadow:0 0 14px rgba(255,234,0,.2)}
+.msg[data-role=ADMIN]{border-left-color:#ff1744}
+.msg[data-role=MOD]{border-left-color:#00e5ff}
+.myrole{justify-self:center}
+
+/* ===== Botón y panel de administración ===== */
+.row-end{display:flex;justify-content:space-between;align-items:center;margin-top:22px}
+.btn.mini{width:44px;height:44px;padding:0;font-size:1.2rem;line-height:1}
+.modal{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.78);display:grid;place-items:center;padding:14px}
+.modal[hidden]{display:none}
+.sheet{width:min(100%,560px);max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+.sheet-top{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#14141c}
+.x{width:36px;height:36px;border-radius:10px;border:2px solid var(--r);background:transparent;color:#fff;font:800 1.3rem/1 'Outfit',sans-serif;cursor:pointer}
+.sheet-body{padding:16px;overflow-y:auto;display:grid;gap:12px;align-content:start}
+.ulist{list-style:none;padding:0;display:grid;gap:10px}
+.urow{display:grid;grid-template-columns:40px 1fr 104px;gap:10px;align-items:center;padding:10px;border-radius:12px;background:#12121a;border:1px solid #23232f}
+.urow small{display:block;color:var(--muted);line-height:1.3;margin-bottom:4px}
+.urow .sel{width:auto;padding:10px 8px;font-weight:700}
+.mini-av{width:40px;height:40px;border-radius:50%;background:#1c1c26;display:grid;place-items:center;font-weight:800;overflow:hidden}
+.mini-av img{width:100%;height:100%;object-fit:cover}
