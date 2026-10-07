@@ -111,3 +111,5 @@ background:linear-gradient(#0b0b10,#0b0b10) padding-box,conic-gradient(from var(
 .staff-on .del{display:block}
 .dock-btn.logout{--c:#ff1744;background:transparent;cursor:pointer;font-family:inherit}
 .check{display:flex;align-items:center;gap:8px;font-weight:600!important;cursor:pointer}.check input{width:18px;height:18px;accent-color:#00e5ff}
+.access-options{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.access-options .btn{flex:1 1 130px}
+.login-card{width:min(100%,560px);padding:28px 24px 24px;text-align:center}.login-card .form{width:100%;padding:0;text-align:left}.access-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}.access-tab{padding:12px;border:2px solid #2a2a38;border-radius:12px;background:#0a0a10;color:#fff;font:800 1rem 'Outfit',sans-serif;cursor:pointer}.access-tab.active{border-color:var(--g);color:#fff;box-shadow:0 0 14px rgba(0,230,118,.45);background:#102018}.login-note{max-width:560px;text-align:center;margin:0}

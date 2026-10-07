@@ -15,3 +15,4 @@
 .chat-form button{padding:14px 28px;border:0;border-radius:12px;color:#fff;font:800 1rem 'Outfit',sans-serif;cursor:pointer;background:linear-gradient(90deg,var(--r),var(--b));transition:transform .15s}
 .chat-form button:active{transform:scale(.9)}
 .msg .nick{display:block;font:800 .9rem 'Outfit',sans-serif;width:max-content;max-width:100%}
+.msg .report{float:right;border:0;background:transparent;color:#ffd600;cursor:pointer;font-size:.85rem;padding:0 4px}.msg .report:hover{color:#fff}.msg .del{float:right}

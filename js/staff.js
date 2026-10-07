@@ -13,7 +13,8 @@
     if (r.status === 401 || r.status === 403) throw new Error('auth'); if (!r.ok) throw new Error('net');
     return r.json().catch(() => null);
   }
-  window.Staff = { level, role: () => (sess() || {}).role || null, deleteMessage: id => api('DELETE', 'messages/' + id) };
+  async function audit(action, target, detail) { try { await api('POST', 'audit', { actor: me.name, action, target: target || '', detail: detail || '', ts: { '.sv': 'timestamp' } }); } catch {} }
+  window.Staff = { level, role: () => (sess() || {}).role || null, deleteMessage: async id => { await api('DELETE', 'messages/' + id); await audit('delete_message', id, 'Mensaje eliminado desde el panel'); } };
 
   const mine = $('myrole');
   if (mine) Roles.load().catch(() => {}).then(() => mine.append(Roles.badge(Roles.of(me.name))));
@@ -24,7 +25,9 @@
   async function login(pw) {
     const remember = !!localStorage.getItem('nova-auth-local');
     let j;
-    try { j = await Auth.login(me.name, pw, remember); } catch (e) {
+    const anonymous = Auth.isAnonymous() && Auth.uid() === me.uid;
+    if (anonymous && pw.length < 6) throw new Error('weak');
+    try { j = anonymous ? await Auth.link(me.name, pw, remember) : await Auth.login(me.name, pw, remember); } catch (e) {
       const code = String(e.message || '');
       throw new Error(code.startsWith('TOO_MANY') ? 'many' : /INVALID|NOT_FOUND|PASSWORD/.test(code) ? 'bad' : 'net');
     }
@@ -43,27 +46,29 @@
   modal.querySelector('.x').onclick = () => modal.hidden = true;
   modal.addEventListener('click', e => { if (e.target === modal) modal.hidden = true; });
   btns.forEach(b => b.onclick = () => { modal.hidden = false; sess() ? home() : loginView(); });
+  if (new URLSearchParams(location.search).get('staff') === '1') setTimeout(() => btns[0] && btns[0].click(), 80);
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; };
   const relog = msg => { sessionStorage.removeItem(SK); fire(); loginView(msg); };
 
   function loginView(note) {
-    body.innerHTML = '<p class="muted" style="margin:0">Acceso de staff para <b></b>. Tu rol exige contraseña.</p><input class="in" type="password" id="apw" placeholder="Contraseña" autocomplete="current-password"><button class="btn main" type="button" id="alog">Entrar</button><p class="err" id="amsg"></p>';
+    const creating = Auth.isAnonymous() && Auth.uid() === me.uid;
+    body.innerHTML = `<p class="muted" style="margin:0">${creating ? 'Esta cuenta antigua tiene rol de staff, pero todavía no tiene contraseña. Crea una para activar la consola.' : 'Acceso de staff para <b></b>. Usa la contraseña de tu cuenta.'}</p><input class="in" type="password" id="apw" placeholder="${creating ? 'Nueva contraseña (mínimo 6)' : 'Contraseña'}" autocomplete="${creating ? 'new-password' : 'current-password'}"><button class="btn main" type="button" id="alog">${creating ? 'Crear contraseña y entrar' : 'Entrar'}</button><p class="err" id="amsg"></p>`;
     body.querySelector('b').textContent = '@' + me.name; $('amsg').textContent = note || '';
     const pw = $('apw'), go = $('alog');
     const run = async () => {
       if (!pw.value) return; go.disabled = true; $('amsg').textContent = '';
       try { await login(pw.value); pw.value = ''; home(); }
-      catch (e) { $('amsg').textContent = { bad: 'Contraseña incorrecta, o tu cuenta de staff no existe.', many: 'Demasiados intentos. Espera unos minutos.', norole: 'Tu cuenta no tiene un rol de staff activo.' }[e.message] || 'No se pudo conectar. Intenta de nuevo.'; go.disabled = false; }
+      catch (e) { $('amsg').textContent = { bad: 'Contraseña incorrecta.', many: 'Demasiados intentos. Espera unos minutos.', weak: 'La contraseña debe tener mínimo 6 caracteres.', norole: 'Tu cuenta no tiene un rol de staff activo.' }[e.message] || 'No se pudo conectar. Intenta de nuevo.'; go.disabled = false; }
     };
     go.onclick = run; pw.addEventListener('keydown', e => { if (e.key === 'Enter') run(); }); pw.focus();
   }
 
   function home(tab) {
-    const tabs = []; if (level() >= 2) tabs.push(['users', 'Usuarios']); tabs.push(['msgs', 'Mensajes'], ['me', 'Cuenta']);
+    const tabs = []; if (level() >= 2) tabs.push(['users', 'Usuarios']); tabs.push(['reports', 'Reportes'], ['msgs', 'Mensajes']); if (level() >= 2) tabs.push(['audit', 'Historial']); tabs.push(['me', 'Cuenta']);
     tab = tab || tabs[0][0]; body.innerHTML = '';
     const bar = el('div', 'tabs'); tabs.forEach(([k, l]) => { const b = el('button', 'tab' + (k === tab ? ' on' : ''), l); b.type = 'button'; b.onclick = () => home(k); bar.append(b); });
     const pane = el('div', 'pane'); body.append(bar, pane);
-    ({ users: usersTab, msgs: msgsTab, me: meTab })[tab](pane);
+    ({ users: usersTab, reports: reportsTab, msgs: msgsTab, audit: auditTab, me: meTab })[tab](pane);
   }
 
   // ---------- Usuarios (ADMIN+; OWNER edita) ----------
@@ -101,7 +106,7 @@
           const del = el('button', 'btn danger', 'Eliminar'); del.type = 'button';
           del.onclick = async () => {
             if (!confirm(`¿Eliminar la cuenta de @${u.name}? Esta acción no se puede deshacer.`)) return;
-            try { const k = Store.key(u.name); await api('DELETE', 'users/' + k); await api('DELETE', 'roles/' + k).catch(() => {}); if (u.uid) await api('DELETE', 'staff/' + u.uid).catch(() => {}); reload(`Cuenta de @${u.name} eliminada.`); } catch (e) { fail(e); }
+            try { const k = Store.key(u.name); await api('DELETE', 'users/' + k); await api('DELETE', 'roles/' + k).catch(() => {}); if (u.uid) await api('DELETE', 'staff/' + u.uid).catch(() => {}); await audit('delete_user', u.name, 'Cuenta eliminada'); reload(`Cuenta de @${u.name} eliminada.`); } catch (e) { fail(e); }
           };
           ctl.append(del);
         }
@@ -120,9 +125,40 @@
   async function setRole(u, role) {
     const k = Store.key(u.name), uid = u.uid;
     if (!uid) throw new Error('auth');
-    if (role === 'USER') { await api('DELETE', 'roles/' + k); await api('DELETE', 'staff/' + uid).catch(() => {}); delete Roles.map[k]; return `@${u.name} ahora es USER.`; }
+    if (role === 'USER') { await api('DELETE', 'roles/' + k); await api('DELETE', 'staff/' + uid).catch(() => {}); delete Roles.map[k]; await audit('change_role', u.name, 'USER'); return `@${u.name} ahora es USER.`; }
     await api('PUT', 'staff/' + uid, role); await api('PUT', 'roles/' + k, role); Roles.map[k] = role;
+    await audit('change_role', u.name, role);
     return `@${u.name} ahora es ${role}. Usará la misma contraseña con la que se registró.`;
+  }
+
+  // ---------- Reportes y sanciones (MOD+) ----------
+  async function reportsTab(pane, note) {
+    pane.textContent = 'Cargando…'; let reports = {};
+    try { reports = await api('GET', 'reports') || {}; } catch { pane.textContent = 'No se pudieron cargar los reportes.'; return; }
+    pane.innerHTML = ''; const status = el('p', 'hint', note || ''), ul = el('ul', 'ulist'); pane.append(status, ul);
+    const open = Object.entries(reports).filter(([, r]) => !r || r.status !== 'resolved').sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
+    if (!open.length) { status.textContent = note || 'No hay reportes pendientes.'; return; }
+    open.forEach(([id, r]) => {
+      const li = el('li', 'urow'), info = el('div'); info.append(el('b', '', `@${r.n || 'usuario'} · ${r.reason || 'Sin motivo'}`), el('small', '', `Reportó @${r.reporterName || 'usuario'} · ${r.ts ? new Date(r.ts).toLocaleString() : 'ahora'}`));
+      const ctl = el('div', 'ctl');
+      const mute = el('button', 'btn', 'Silenciar'); mute.type = 'button'; mute.style.setProperty('--c', '#ffd600');
+      const ban = el('button', 'btn danger', 'Bloquear'); ban.type = 'button';
+      const del = el('button', 'btn danger', 'Borrar mensaje'); del.type = 'button';
+      const done = el('button', 'btn', 'Resolver'); done.type = 'button'; done.style.setProperty('--c', '#00c853');
+      const finish = async (msg, action) => { await api('PATCH', 'reports/' + id, { status: 'resolved', resolvedBy: me.name, resolution: msg, resolvedAt: { '.sv': 'timestamp' } }); await audit(action || 'resolve_report', r.n, msg); reportsTab(pane, msg); };
+      mute.onclick = async () => { const min = Math.max(1, parseInt(prompt('¿Cuántos minutos de silencio?', '60'), 10) || 0); if (!min) return; try { await api('PUT', 'sanctions/' + Store.key(r.n), { type: 'mute', until: Date.now() + min * 60000, reason: r.reason || '', by: me.name, ts: { '.sv': 'timestamp' } }); await finish(`@${r.n} silenciado ${min} minutos.`, 'mute_user'); } catch (e) { status.textContent = 'No se pudo aplicar el silencio.'; } };
+      ban.onclick = async () => { if (!confirm(`¿Bloquear a @${r.n}?`)) return; try { await api('PUT', 'sanctions/' + Store.key(r.n), { type: 'ban', until: 0, reason: r.reason || '', by: me.name, ts: { '.sv': 'timestamp' } }); await finish(`@${r.n} bloqueado.`, 'ban_user'); } catch { status.textContent = 'No se pudo bloquear.'; } };
+      del.onclick = async () => { try { await Staff.deleteMessage(r.messageId); await finish(`Mensaje de @${r.n} eliminado.`, 'delete_reported_message'); } catch { status.textContent = 'No se pudo eliminar el mensaje.'; } };
+      done.onclick = () => finish('Reporte revisado sin sanción.', 'resolve_report').catch(() => { status.textContent = 'No se pudo resolver.'; });
+      ctl.append(mute, ban, del, done); li.append(info, ctl); ul.append(li);
+    });
+  }
+
+  async function auditTab(pane) {
+    pane.textContent = 'Cargando…'; let rows = {};
+    try { rows = await api('GET', 'audit') || {}; } catch { pane.textContent = 'No se pudo cargar el historial.'; return; }
+    pane.innerHTML = ''; const ul = el('ul', 'ulist'); pane.append(el('p', 'hint', 'Últimas acciones administrativas'), ul);
+    Object.values(rows).sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 100).forEach(x => { const li = el('li', 'urow'), d = x.ts ? new Date(x.ts).toLocaleString() : ''; li.append(el('b', '', `${x.actor || 'sistema'} · ${x.action || 'acción'}`), el('small', '', `${x.target || ''} ${x.detail || ''} · ${d}`)); ul.append(li); });
   }
 
   // ---------- Mensajes de un usuario (MOD+) ----------

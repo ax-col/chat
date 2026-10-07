@@ -15,7 +15,7 @@
         "n"
       ],
       "$m": {
-        ".write": "auth != null && ((!data.exists() && newData.child('uid').val() === auth.uid && root.child('users').child(newData.child('n').val().toLowerCase()).child('uid').val() === auth.uid) || (data.exists() && !newData.exists() && (auth.token.email === 'httpstv0.es@gmail.com' || root.child('staff').child(auth.uid).exists())))",
+        ".write": "auth != null && ((!data.exists() && newData.child('uid').val() === auth.uid && root.child('users').child(newData.child('n').val().toLowerCase()).child('uid').val() === auth.uid && root.child('sanctions').child(newData.child('n').val().toLowerCase()).child('type').val() !== 'ban' && (root.child('sanctions').child(newData.child('n').val().toLowerCase()).child('type').val() !== 'mute' || root.child('sanctions').child(newData.child('n').val().toLowerCase()).child('until').val() < now)) || (data.exists() && !newData.exists() && (auth.token.email === 'httpstv0.es@gmail.com' || root.child('staff').child(auth.uid).exists())))",
         ".validate": "newData.hasChildren(['n','t','ts','uid']) && newData.child('n').isString() && newData.child('n').val().length >= 3 && newData.child('n').val().length <= 16 && newData.child('t').isString() && newData.child('t').val().length >= 1 && newData.child('t').val().length <= 300 && newData.child('ts').isNumber() && newData.child('uid').isString()"
       }
     },
@@ -38,6 +38,27 @@
         ".read": "auth != null && (auth.token.email === 'httpstv0.es@gmail.com' || root.child('staff').child(auth.uid).val() === 'OWNER')",
         ".write": "auth != null && (auth.token.email === 'httpstv0.es@gmail.com' || root.child('staff').child(auth.uid).val() === 'OWNER')",
         ".validate": "newData.isString()"
+      }
+    },
+    "reports": {
+      ".read": "auth != null && (root.child('staff').child(auth.uid).exists() || auth.token.email === 'httpstv0.es@gmail.com')",
+      "$id": {
+        ".write": "auth != null && ((!data.exists() && newData.child('reporter').val() === auth.uid) || data.exists() && (root.child('staff').child(auth.uid).exists() || auth.token.email === 'httpstv0.es@gmail.com'))",
+        ".validate": "newData.hasChildren(['messageId','n','reporter','reporterName','reason','ts','status']) && newData.child('messageId').isString() && newData.child('n').isString() && newData.child('reporter').isString() && newData.child('reporterName').isString() && newData.child('reason').isString() && newData.child('reason').val().length > 0 && newData.child('status').isString()"
+      }
+    },
+    "sanctions": {
+      ".read": "auth != null",
+      "$u": {
+        ".write": "auth != null && (root.child('staff').child(auth.uid).exists() || auth.token.email === 'httpstv0.es@gmail.com')",
+        ".validate": "newData.hasChildren(['type','until','reason','by','ts']) && (newData.child('type').val() === 'mute' || newData.child('type').val() === 'ban') && newData.child('until').isNumber() && newData.child('reason').isString() && newData.child('by').isString()"
+      }
+    },
+    "audit": {
+      ".read": "auth != null && (root.child('staff').child(auth.uid).exists() || auth.token.email === 'httpstv0.es@gmail.com')",
+      "$id": {
+        ".write": "auth != null && (root.child('staff').child(auth.uid).exists() || auth.token.email === 'httpstv0.es@gmail.com')",
+        ".validate": "newData.hasChildren(['actor','action','target','detail','ts']) && newData.child('actor').isString() && newData.child('action').isString() && newData.child('target').isString() && newData.child('detail').isString()"
       }
     }
   }

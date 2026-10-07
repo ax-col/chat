@@ -13,6 +13,14 @@
   addEventListener('staff-change', mark); mark();
 
   // Mensaje { id, n: usuario, t: texto, ts: ms }. Devuelve true si era nuevo.
+  async function reportMessage(id, n) {
+    if (!Store.online) return alert('Los reportes requieren la base de datos conectada.');
+    const reason = (prompt(`Motivo del reporte de @${n}:`, 'Contenido inapropiado') || '').trim(); if (!reason) return;
+    const tk = await Auth.token(); if (!tk) throw 0;
+    const r = await fetch(`${NOVA.db.url.replace(/\/$/, '')}/reports.json?auth=${encodeURIComponent(tk)}`, { method: 'POST', body: JSON.stringify({ messageId: id, n, reporter: Auth.uid(), reporterName: me.name, reason, ts: { '.sv': 'timestamp' }, status: 'open' }) });
+    if (!r.ok) throw 0; label.textContent = 'Reporte enviado al equipo.';
+  }
+
   function add({ id, n, t, ts }) {
     if (!id || seen.has(id) || typeof t !== 'string') return false; seen.add(id); empty.remove();
     const li = document.createElement('li'); li.className = 'msg' + (n === me.name ? ' me' : ''); li.dataset.u = String(n || '').toLowerCase(); li.dataset.id = id;
@@ -21,9 +29,11 @@
     const slot = document.createElement('span'); slot.className = 'slot'; head.append(nick, slot);
     const p = document.createElement('span'); p.textContent = t;
     const tm = document.createElement('time'); tm.textContent = new Date(ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const report = document.createElement('button'); report.type = 'button'; report.className = 'report'; report.textContent = '⚑'; report.title = 'Reportar mensaje'; report.setAttribute('aria-label', 'Reportar mensaje'); report.hidden = n === me.name;
+    report.onclick = async () => { try { await reportMessage(id, n); } catch { label.textContent = 'No se pudo enviar el reporte.'; } };
     const del = document.createElement('button'); del.type = 'button'; del.className = 'del'; del.textContent = '×'; del.setAttribute('aria-label', 'Eliminar mensaje');
     del.onclick = async () => { try { await Staff.deleteMessage(id); li.remove(); } catch { label.textContent = 'No se pudo eliminar. Inicia sesión de staff.'; } };
-    li.append(head, p, tm, del); paint(li); list.append(li); list.scrollTop = list.scrollHeight; return true;
+    li.append(head, p, tm, report, del); paint(li); list.append(li); list.scrollTop = list.scrollHeight; return true;
   }
   const drop = id => { const li = list.querySelector(`.msg[data-id="${CSS.escape(id)}"]`); if (li) li.remove(); };
 
@@ -41,6 +51,9 @@
       });
       send = async t => {
         const tk = await Auth.token(); if (!tk) throw 0;
+        const sanctions = await fetch(`${base}/sanctions.json?auth=${encodeURIComponent(tk)}`).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+        const sanction = sanctions && sanctions[String(me.name).toLowerCase()];
+        if (sanction && (sanction.type === 'ban' || sanction.until > Date.now())) throw new Error(sanction.type === 'ban' ? 'banned' : 'muted');
         const r = await fetch(`${base}/messages.json?auth=${encodeURIComponent(tk)}`, { method: 'POST', body: JSON.stringify({ n: me.name, t, ts: { '.sv': 'timestamp' }, uid: Auth.uid() }) });
         if (!r.ok) throw 0;
       };
@@ -59,6 +72,6 @@
   form.addEventListener('submit', async e => {
     e.preventDefault(); const t = text.value.trim(); if (!t || !send || Date.now() - last < 1200) return; last = Date.now(); text.value = '';
     try { await send(t); localStorage.setItem('nova-msgs', (+localStorage.getItem('nova-msgs') || 0) + 1); }
-    catch { down('No se pudo enviar. Revisa tu conexión.'); }
+    catch (x) { down(x.message === 'banned' ? 'Tu cuenta está bloqueada.' : x.message === 'muted' ? 'Tu cuenta está silenciada temporalmente.' : 'No se pudo enviar. Revisa tu conexión.'); }
   });
 })();
