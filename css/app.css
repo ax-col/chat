@@ -109,3 +109,5 @@ background:linear-gradient(#0b0b10,#0b0b10) padding-box,conic-gradient(from var(
 .msg{position:relative}
 .msg .del{display:none;position:absolute;top:6px;right:6px;width:28px;height:28px;padding:0;border-radius:8px;border:2px solid var(--r);background:#0a0a10;color:#fff;font:800 1rem/1 'Outfit',sans-serif;cursor:pointer}
 .staff-on .del{display:block}
+.dock-btn.logout{--c:#ff1744;background:transparent;cursor:pointer;font-family:inherit}
+.check{display:flex;align-items:center;gap:8px;font-weight:600!important;cursor:pointer}.check input{width:18px;height:18px;accent-color:#00e5ff}

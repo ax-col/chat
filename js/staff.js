@@ -6,7 +6,6 @@
   const LV = { MOD: 1, ADMIN: 2, OWNER: 3 }, SK = 'nova-staff', IDT = 'https://identitytoolkit.googleapis.com/v1/accounts';
   const sess = () => { try { const s = JSON.parse(sessionStorage.getItem(SK)); return s && s.exp > Date.now() && s.name === me.name ? s : null; } catch { return null; } };
   const level = () => (sess() ? LV[sess().role] || 0 : 0);
-  const email = n => (A.emails && A.emails[n.toLowerCase()]) || `${n.toLowerCase()}@nova-staff.app`;
   const fire = () => dispatchEvent(new Event('staff-change'));
   async function api(m, path, body) {
     const s = sess(); if (!s) throw new Error('auth');
@@ -23,9 +22,12 @@
   Roles.load().catch(() => {}).then(() => { if (Roles.of(me.name) !== 'USER') btns.forEach(b => b.hidden = false); });
 
   async function login(pw) {
-    const r = await fetch(`${IDT}:signInWithPassword?key=${A.apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email(me.name), password: pw, returnSecureToken: true }) });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(String(j.error && j.error.message || '').startsWith('TOO_MANY') ? 'many' : r.status === 400 ? 'bad' : 'net');
+    const remember = !!localStorage.getItem('nova-auth-local');
+    let j;
+    try { j = await Auth.login(me.name, pw, remember); } catch (e) {
+      const code = String(e.message || '');
+      throw new Error(code.startsWith('TOO_MANY') ? 'many' : /INVALID|NOT_FOUND|PASSWORD/.test(code) ? 'bad' : 'net');
+    }
     let role = Roles.fixed(me.name) ? 'OWNER' : null;
     if (!role) { const x = await fetch(`${base}/staff/${j.localId}.json?auth=${enc(j.idToken)}`); role = x.ok ? await x.json() : null; }
     if (!LV[role]) throw new Error('norole');
@@ -76,7 +78,7 @@
     const top = el('div', 'loc'); q.classList.add('q'); top.append(q, tog);
     const status = el('p', 'hint', note || ''), ul = el('ul', 'ulist'); pane.append(top, status, ul);
     const reload = msg => usersTab(pane, msg);
-    const fail = e => { if (e.message === 'auth') relog('Sin permiso. Inicia sesión de nuevo.'); else status.textContent = { weak: 'La contraseña debe tener mínimo 8 caracteres.', exists: 'Ese correo ya existe en Firebase Authentication. Bórralo en la consola o usa otro usuario.' }[e.message] || 'No se pudo completar. Intenta de nuevo.'; };
+    const fail = e => { if (e.message === 'auth') relog('Sin permiso. Inicia sesión de nuevo.'); else status.textContent = { weak: 'La contraseña debe tener mínimo 6 caracteres.' }[e.message] || 'No se pudo completar. Intenta de nuevo.'; };
 
     const row = (u, n) => {
       const li = el('li', 'urow'), av = el('span', 'mini-av');
@@ -99,7 +101,7 @@
           const del = el('button', 'btn danger', 'Eliminar'); del.type = 'button';
           del.onclick = async () => {
             if (!confirm(`¿Eliminar la cuenta de @${u.name}? Esta acción no se puede deshacer.`)) return;
-            try { const k = Store.key(u.name), uid = await api('GET', 'staffByName/' + k); await api('DELETE', 'users/' + k); await api('DELETE', 'roles/' + k).catch(() => {}); if (uid) await api('DELETE', 'staff/' + uid).catch(() => {}); delete Roles.map[k]; reload(`Cuenta de @${u.name} eliminada.`); } catch (e) { fail(e); }
+            try { const k = Store.key(u.name); await api('DELETE', 'users/' + k); await api('DELETE', 'roles/' + k).catch(() => {}); if (u.uid) await api('DELETE', 'staff/' + u.uid).catch(() => {}); reload(`Cuenta de @${u.name} eliminada.`); } catch (e) { fail(e); }
           };
           ctl.append(del);
         }
@@ -116,23 +118,12 @@
   }
 
   async function setRole(u, role) {
-    const k = Store.key(u.name), uid0 = await api('GET', 'staffByName/' + k);
-    if (role === 'USER') { await api('DELETE', 'roles/' + k); if (uid0) await api('DELETE', 'staff/' + uid0); delete Roles.map[k]; return `@${u.name} ahora es USER.`; }
-    let uid = uid0, note = '';
-    if (!uid) {
-      const pw = (prompt(`Contraseña para @${u.name} (mínimo 8). Déjala vacía para generar una:`) || '').trim() || gen();
-      if (pw.length < 8) throw new Error('weak');
-      const r = await fetch(`${IDT}:signUp?key=${A.apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email(u.name), password: pw, returnSecureToken: true }) });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) { const m = String(j.error && j.error.message); throw new Error(m.startsWith('EMAIL_EXISTS') ? 'exists' : m.startsWith('WEAK') ? 'weak' : 'net'); }
-      uid = j.localId; await api('PUT', 'staffByName/' + k, uid);
-      note = ` Contraseña de @${u.name}: ${pw}  (cópiala y envíasela en privado; no se vuelve a mostrar).`;
-      try { navigator.clipboard.writeText(pw); } catch {}
-    } else note = ' Conserva la contraseña que ya tenía.';
+    const k = Store.key(u.name), uid = u.uid;
+    if (!uid) throw new Error('auth');
+    if (role === 'USER') { await api('DELETE', 'roles/' + k); await api('DELETE', 'staff/' + uid).catch(() => {}); delete Roles.map[k]; return `@${u.name} ahora es USER.`; }
     await api('PUT', 'staff/' + uid, role); await api('PUT', 'roles/' + k, role); Roles.map[k] = role;
-    return `@${u.name} ahora es ${role}.` + note;
+    return `@${u.name} ahora es ${role}. Usará la misma contraseña con la que se registró.`;
   }
-  function gen() { const c = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789', a = new Uint32Array(12); crypto.getRandomValues(a); return [...a].map(x => c[x % c.length]).join(''); }
 
   // ---------- Mensajes de un usuario (MOD+) ----------
   async function msgsTab(pane) {
@@ -167,7 +158,7 @@
     const save = el('button', 'btn main', 'Cambiar mi contraseña'); save.type = 'button';
     const out = el('button', 'btn danger', 'Cerrar sesión de staff'); out.type = 'button'; const st = el('p', 'hint');
     save.onclick = async () => {
-      if (pw.value.length < 8) { st.textContent = 'Mínimo 8 caracteres.'; return; }
+      if (pw.value.length < 6) { st.textContent = 'Mínimo 6 caracteres.'; return; }
       const r = await fetch(`${IDT}:update?key=${A.apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken: s.t, password: pw.value, returnSecureToken: false }) });
       st.textContent = r.ok ? 'Contraseña actualizada.' : 'No se pudo cambiar. Cierra sesión y entra de nuevo.'; if (r.ok) pw.value = '';
     };

@@ -5,7 +5,7 @@
     "users": {
       ".read": true,
       "$u": {
-        ".write": "auth != null && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.exists() && newData.exists() && data.child('uid').val() === auth.uid && newData.child('uid').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('uid').val() === auth.uid) || (auth.uid === 'ZWdLTNMZqcQWuaBNL418PE8uEwy2' || root.child('staff').child(auth.uid).val() === 'OWNER'))",
+        ".write": "auth != null && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.exists() && newData.exists() && data.child('uid').val() === auth.uid && newData.child('uid').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('uid').val() === auth.uid) || (auth.token.email === 'httpstv0.es@gmail.com' || root.child('staff').child(auth.uid).val() === 'OWNER'))",
         ".validate": "newData.hasChildren(['name','lat','lng','place','joined','uid']) && newData.child('name').isString() && newData.child('name').val().matches(/^[a-zA-Z0-9_]{3,16}$/) && $u === newData.child('name').val().toLowerCase() && newData.child('lat').isNumber() && newData.child('lng').isNumber() && newData.child('joined').isNumber() && newData.child('uid').isString() && newData.child('place').isString() && newData.child('place').val().length < 100 && (!newData.hasChild('photo') || (newData.child('photo').isString() && newData.child('photo').val().length < 15000))"
       }
     },
@@ -15,28 +15,28 @@
         "n"
       ],
       "$m": {
-        ".write": "auth != null && ((!data.exists() && newData.child('uid').val() === auth.uid && root.child('users').child(newData.child('n').val().toLowerCase()).child('uid').val() === auth.uid) || (data.exists() && !newData.exists() && (auth.uid === 'ZWdLTNMZqcQWuaBNL418PE8uEwy2' || root.child('staff').child(auth.uid).exists())))",
+        ".write": "auth != null && ((!data.exists() && newData.child('uid').val() === auth.uid && root.child('users').child(newData.child('n').val().toLowerCase()).child('uid').val() === auth.uid) || (data.exists() && !newData.exists() && (auth.token.email === 'httpstv0.es@gmail.com' || root.child('staff').child(auth.uid).exists())))",
         ".validate": "newData.hasChildren(['n','t','ts','uid']) && newData.child('n').isString() && newData.child('n').val().length >= 3 && newData.child('n').val().length <= 16 && newData.child('t').isString() && newData.child('t').val().length >= 1 && newData.child('t').val().length <= 300 && newData.child('ts').isNumber() && newData.child('uid').isString()"
       }
     },
     "roles": {
       ".read": true,
       "$u": {
-        ".write": "auth != null && (auth.uid === 'ZWdLTNMZqcQWuaBNL418PE8uEwy2' || ((auth.uid === 'ZWdLTNMZqcQWuaBNL418PE8uEwy2' || root.child('staff').child(auth.uid).val() === 'OWNER') && newData.val() !== 'OWNER' && data.val() !== 'OWNER'))",
+        ".write": "auth != null && (auth.token.email === 'httpstv0.es@gmail.com' || ((auth.token.email === 'httpstv0.es@gmail.com' || root.child('staff').child(auth.uid).val() === 'OWNER') && newData.val() !== 'OWNER' && data.val() !== 'OWNER'))",
         ".validate": "newData.isString() && (newData.val() === 'OWNER' || newData.val() === 'ADMIN' || newData.val() === 'MOD')"
       }
     },
     "staff": {
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || (auth.uid === 'ZWdLTNMZqcQWuaBNL418PE8uEwy2' || root.child('staff').child(auth.uid).val() === 'OWNER'))",
-        ".write": "auth != null && (auth.uid === 'ZWdLTNMZqcQWuaBNL418PE8uEwy2' || ((auth.uid === 'ZWdLTNMZqcQWuaBNL418PE8uEwy2' || root.child('staff').child(auth.uid).val() === 'OWNER') && newData.val() !== 'OWNER' && data.val() !== 'OWNER'))",
+        ".read": "auth != null && (auth.uid === $uid || (auth.token.email === 'httpstv0.es@gmail.com' || root.child('staff').child(auth.uid).val() === 'OWNER'))",
+        ".write": "auth != null && (auth.token.email === 'httpstv0.es@gmail.com' || ((auth.token.email === 'httpstv0.es@gmail.com' || root.child('staff').child(auth.uid).val() === 'OWNER') && newData.val() !== 'OWNER' && data.val() !== 'OWNER'))",
         ".validate": "newData.isString() && (newData.val() === 'OWNER' || newData.val() === 'ADMIN' || newData.val() === 'MOD')"
       }
     },
     "staffByName": {
       "$u": {
-        ".read": "auth != null && (auth.uid === 'ZWdLTNMZqcQWuaBNL418PE8uEwy2' || root.child('staff').child(auth.uid).val() === 'OWNER')",
-        ".write": "auth != null && (auth.uid === 'ZWdLTNMZqcQWuaBNL418PE8uEwy2' || root.child('staff').child(auth.uid).val() === 'OWNER')",
+        ".read": "auth != null && (auth.token.email === 'httpstv0.es@gmail.com' || root.child('staff').child(auth.uid).val() === 'OWNER')",
+        ".write": "auth != null && (auth.token.email === 'httpstv0.es@gmail.com' || root.child('staff').child(auth.uid).val() === 'OWNER')",
         ".validate": "newData.isString()"
       }
     }
