@@ -1,34 +1,34 @@
-# NOVA — puesta en marcha (gratis, sin tarjeta)
+# NOVA — guía de puesta en marcha
 
-## 1. Base de datos global (Firebase Realtime Database, plan Spark)
-1. Entra a https://console.firebase.google.com → **Agregar proyecto** (déjalo en el plan Spark).
-2. Menú **Compilación → Realtime Database → Crear base de datos** → elige región → modo **bloqueado**.
-3. Pestaña **Reglas** → borra todo, pega el contenido de `firebase-rules.json` → **Publicar**.
-4. Pestaña **Datos**: copia la URL de arriba (https://TU-PROYECTO-default-rtdb.firebaseio.com).
-5. Pégala en `js/config.js` → `db: { url: '...' }`.
+## 1. Firebase (gratis, plan Spark)
+1. **Realtime Database**: crea la base (modo bloqueado) y copia su URL en `js/config.js` → `db.url`.
+2. **Authentication → Método de acceso**: habilita **Correo/contraseña** y **Anónimo**.
+   NO desactives "Habilitar creación (registro)": hace falta para las cuentas anónimas y de staff.
+3. **Configuración del proyecto → General → Clave de API web** → `js/config.js` → `auth.apiKey`.
+4. **Authentication → Usuarios**: tu cuenta de dueño (la que ya creaste). Copia su **UID**.
+5. **Realtime Database → Reglas**: pega `firebase-rules.json`. Verifica que el UID de las reglas sea el tuyo
+   (aparece varias veces como `auth.uid === '...'`; ya trae el UID que usabas). Pulsa **Publicar**.
+6. Esta versión cambia el modelo de usuarios. **Borra los datos de prueba** en la pestaña **Datos**:
+   los nodos `users`, `messages` y `roles` (con la X). Luego registra primero a tu dueño (AndreX).
+7. En `js/config.js` → `auth.emails` pon el correo de tu cuenta de dueño, y `auth.owners` tu usuario.
 
-Con eso el usuario único, el mapa y el chat quedan globales y con historial.
-Límite gratis de Firebase: 100 conexiones simultáneas (cada chat abierto cuenta como una).
+## 2. Publicar
+Sube TODO el contenido de esta carpeta (incluida `.github` y `sw.js`) a la raíz del repo. GitHub Pages ya está activo.
 
-## 2. Publicar la página (HTTPS, gratis)
-- **Netlify Drop**: arrastra la carpeta `nova2027` → te da un enlace público.
-- **GitHub Pages**: sube la carpeta a un repo → Settings → Pages.
-- **Cloudflare Pages**: sube la carpeta o conecta el repo.
-Debe abrirse por **https** para que el GPS del navegador funcione.
+## 3. Cómo funcionan los roles
+Todo se aplica en las reglas de Firebase, no solo en la pantalla.
+- **USER**: sin contraseña. Usa chat, mapa y perfil.
+- **MOD** (con contraseña): ver los mensajes de un usuario y borrarlos (también con la × del chat).
+- **ADMIN** (con contraseña): lo de MOD + ver todas las cuentas, su posición (#) y los roles de todos.
+- **OWNER** (con contraseña): todo lo anterior + cambiar roles, crear la contraseña de quien asciende,
+  cambiar el número de cuenta (#) y eliminar cuentas. Solo el dueño principal (`owners`) puede nombrar otros OWNER.
 
-## 3. Roles y panel de administración (seguro)
-Los roles (OWNER, ADMIN, MOD, USER) se guardan en `/roles`. Solo tu cuenta de Firebase Authentication puede cambiarlos; la contraseña NUNCA va en el código ni en GitHub.
-1. Firebase → **Authentication → Comenzar → Método de acceso → Correo/contraseña → Habilitar**.
-2. **Authentication → Usuarios → Agregar usuario**: correo `tuusuario@nova-admin.app` (tu usuario de la página en minúsculas) y una contraseña NUEVA y larga.
-3. Copia el **UID de usuario** de esa fila.
-4. **Realtime Database → Reglas**: pega `firebase-rules.json` y cambia `PEGA_AQUI_EL_UID_DEL_OWNER` por ese UID → **Publicar**.
-5. **Configuración del proyecto (engranaje) → General → Clave de API web** → pégala en `js/config.js` → `auth.apiKey`.
-6. En `js/config.js` → `auth.staff` pon tu usuario en minúsculas (ej. `['andrex']`).
-7. (Recomendado) Authentication → Configuración → Acciones del usuario → desactiva "Habilitar creación (registro)".
-8. Regístrate en la página con ese usuario → Perfil → botón ⚙ → contraseña → asígnate OWNER.
+Ascender a alguien: Panel ⚙ → Usuarios → elegir rol. Se le crea una cuenta de staff con contraseña
+(la escribes o se genera; se muestra una sola vez para que se la des en privado). Entra con ⚙ → su contraseña.
+Si alguien baja a USER pierde sus poderes; su cuenta de staff queda inactiva.
+Para restablecer una contraseña olvidada: Firebase → Authentication → Usuarios → el usuario → restablecer.
 
-### Dueño fijo
-En `js/config.js` → `auth.owners` están los usuarios que SIEMPRE se muestran como OWNER (por defecto `AndreX`). Cambiar roles de otros sigue exigiendo la contraseña de Firebase Authentication. No borres la cuenta del dueño: otra persona podría registrar ese nombre.
-
-### Correo del administrador
-En `js/config.js` → `auth.emails` va el correo con el que creaste al usuario en Firebase Authentication (ej. `andrex: 'ax@auth.com'`). Si no aparece ahí, se usa `usuario@nova-admin.app`.
+## 4. Avisos de mensajes
+Campana arriba a la derecha: pide permiso y avisa de cada mensaje nuevo (quién y qué escribió).
+Funciona con la página o la app abierta (también en segundo plano). Con el navegador totalmente cerrado
+no llegan avisos: eso requiere un servidor de notificaciones push (Firebase Cloud Messaging con un backend de pago).

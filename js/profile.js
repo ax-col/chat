@@ -13,11 +13,12 @@
   $('save').onclick = async () => {
     const name = $('name').value.trim();
     if (!VALID.test(name)) return msg('Usa de 3 a 16 caracteres: letras, números o _.');
+    if (Store.key(name) !== Store.key(me.name) && window.Roles && Roles.of(me.name) !== 'USER') return msg('El staff no puede cambiar de usuario. Pídeselo al owner.');
     const u = { ...me, name, photo, ...(loc || {}) };
     try {
       if (Store.key(name) === Store.key(me.name)) await Store.update(u); else { await Store.claim(u); await Store.remove(me.name); }
       Me.set(u); me = u; msg('Cambios guardados.', true); infographic();
-    } catch (x) { msg(x.message === 'taken' ? 'Ese usuario ya existe. Elige otro.' : 'No se pudo guardar. Intenta de nuevo.'); }
+    } catch (x) { msg(x.message === 'taken' ? 'Ese usuario ya existe. Elige otro.' : x.message === 'auth' ? 'Sin permiso. Vuelve a registrarte.' : 'No se pudo guardar. Intenta de nuevo.'); }
   };
   $('del').onclick = async () => {
     if (!confirm('¿Eliminar tu cuenta? Tu usuario quedará libre.')) return;

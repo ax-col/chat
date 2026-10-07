@@ -3,13 +3,12 @@ window.NOVA = {
   // Base de datos global (Firebase Realtime Database). Vacío = modo demo local (solo tu dispositivo).
   // Pega aquí la URL de tu Realtime Database. Guía paso a paso: README.md
   db: { url: 'https://chatglobal-51793-default-rtdb.firebaseio.com/' },
-  // Panel de roles (seguro, con Firebase Authentication). Guía: README.md, sección 3.
+  // Identidad y staff (Firebase Authentication). Guía: README.md
   auth: {
     apiKey: 'AIzaSyB15ghoM-diGu86QaxG8V64emBxDf-eZIg',              // "Clave de API web" de Firebase (es pública por diseño, no es un secreto)
     // Correo de Firebase Authentication de cada administrador (usuario en minúsculas → correo).
     emails: { andrex: 'ax@auth.com' },
-    owners: ['AndreX'],      // dueños fijos: siempre se muestran como OWNER (no hace falta tocar la base de datos)
-    staff: ['AndreX']        // usuarios que ven el botón ⚙ del panel (igual deben poner su contraseña)
+    owners: ['AndreX']       // dueño fijo: siempre OWNER. El botón ⚙ lo ven todos los que tengan rol (MOD, ADMIN, OWNER)
   },
   chat: { server: 'https://ntfy.sh', room: 'nova-global-sala-x7k2', history: '12h' },
   about: {
