@@ -11,17 +11,6 @@
   const finish = (j, remember, name, anon) => { if (!j.localId || !j.idToken) throw new Error('AUTH_RESPONSE'); write({ uid: j.localId, t: j.idToken, r: j.refreshToken, exp: Date.now() + (+j.expiresIn - 120) * 1000, name: name || '', anon: !!anon }, remember); return j; };
   window.Auth = {
     ready: !!K, uid: () => (current() || {}).uid || null, session: current, isAnonymous: () => !!(current() || {}).anon, emailFor, friendly,
-    async guest(remember) {
-      if (!K) throw new Error('API_KEY_INVALID'); const s = current(); if (s && s.uid) return s;
-      const r = await post(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${K}`, JSON.stringify({ returnSecureToken: true }));
-      const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error((j.error && j.error.message) || 'GUEST_FAILED'); return finish(j, remember, '', true);
-    },
-    async link(name, password, remember) {
-      let s = current(); if (!s || !s.t) throw new Error('AUTH_REQUIRED');
-      const fresh = await this.token(true); s = current(); if (fresh) s.t = fresh;
-      const r = await post(`https://identitytoolkit.googleapis.com/v1/accounts:update?key=${K}`, JSON.stringify({ idToken: s.t, email: emailFor(name), password, returnSecureToken: true }));
-      const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error((j.error && j.error.message) || 'LINK_FAILED'); return finish(j, remember, name, false);
-    },
     async register(name, password, remember) { if (!K) throw new Error('API_KEY_INVALID'); const r = await post(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${K}`, JSON.stringify({ email: emailFor(name), password, returnSecureToken: true })); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error((j.error && j.error.message) || 'REGISTER_FAILED'); return finish(j, remember, name, false); },
     async login(name, password, remember) { if (!K) throw new Error('API_KEY_INVALID'); const r = await post(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${K}`, JSON.stringify({ email: emailFor(name), password, returnSecureToken: true })); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error((j.error && j.error.message) || 'LOGIN_FAILED'); return finish(j, remember, name, false); },
     async token(force = false) { const s = current(); if (!s) return null; if (!force && Date.now() < s.exp) return s.t; if (!s.r) { remove(); return null; } const r = await post(`https://securetoken.googleapis.com/v1/token?key=${K}`, `grant_type=refresh_token&refresh_token=${encodeURIComponent(s.r)}`, true); const j = await r.json().catch(() => ({})); if (!r.ok) { remove(); return null; } finish(j, !!read(LOCAL), s.name, !!s.anon); return j.id_token; },

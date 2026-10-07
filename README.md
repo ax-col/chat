@@ -2,12 +2,12 @@
 
 ## 1. Firebase (gratis, plan Spark)
 1. **Realtime Database**: crea la base (modo bloqueado) y copia su URL en `js/config.js` → `db.url`.
-2. **Authentication → Método de acceso**: habilita **Anónimo** y **Correo/contraseña**. Los usuarios normales entran como invitados; las cuentas con rol convierten su misma identidad a contraseña al activar Staff.
-   NO desactives "Habilitar creación (registro)": hace falta para el registro de usuarios y para crear cuentas de staff.
+2. **Authentication → Método de acceso**: habilita **Correo/contraseña**. Las cuentas nuevas siempre se registran con usuario, contraseña y ubicación. El acceso anónimo ya no se usa para cuentas nuevas.
+   NO desactives "Habilitar creación (registro)": hace falta para registrar usuarios y permitirles entrar a Staff con la misma contraseña.
 3. **Configuración del proyecto → General → Clave de API web** → `js/config.js` → `auth.apiKey`.
 4. **Authentication → Usuarios**: confirma que exista la cuenta del OWNER con el correo configurado en `js/config.js`.
 5. **Realtime Database → Reglas**: pega `firebase-rules.json` y pulsa **Publicar**. La regla reconoce al OWNER por el correo `httpstv0.es@gmail.com`; si cambias ese correo, reemplázalo también en `firebase-rules.json`.
-6. Los usuarios nuevos entran como invitados con usuario y ubicación. Conserva el nodo `users` si contiene perfiles antiguos. Si una cuenta antigua tiene rol, entra al panel Staff desde el mismo dispositivo y crea allí su contraseña; su UID y su rol se conservan.
+6. Los usuarios nuevos entran como invitados con usuario, contraseña y ubicación. Conserva el nodo `users` si contiene perfiles antiguos. Las cuentas nuevas usan esa misma contraseña para Staff cuando tienen un rol.
 7. En `js/config.js` → `auth.emails` pon el correo de tu cuenta de dueño, y `auth.owners` tu usuario.
 
 ## 2. Publicar
@@ -37,10 +37,11 @@ no llegan avisos: eso requiere un servidor de notificaciones push (Firebase Clou
 - Las sanciones se guardan en Firebase y las reglas del servidor impiden enviar mensajes durante un bloqueo o silencio activo.
 - El historial registra cambios de rol, mensajes eliminados, reportes resueltos, silencios, bloqueos y cuentas eliminadas.
 
-## 6. Acceso invitado y Staff
-- **USER** no necesita contraseña: entra como invitado con usuario y ubicación.
-- **MOD/ADMIN/OWNER**: primero entra como invitado; al abrir Staff, si su cuenta antigua no tiene contraseña, el panel le pedirá crearla. Esa contraseña se vincula a la misma identidad de Firebase y no crea un perfil duplicado.
-- Las cuentas que ya tienen contraseña pueden usar “Tengo contraseña” o “Entrar a Staff”.
+## 6. Acceso Invitado y Staff
+
+- **Invitado**: crea o inicia sesión con usuario, contraseña y ubicación para entrar al chat.
+- **MOD/ADMIN/OWNER**: entra a Staff con el mismo usuario y contraseña de su cuenta.
+- No se crea ni se guarda una contraseña adicional al asignar un rol.
 
 ## 7. Configuración segura de Staff
-Cuando OWNER asigna MOD, ADMIN u OWNER, solo se guarda una marca booleana `staffSetup/{uid}`. Nunca se guarda ni se genera una contraseña en la base de datos. El usuario entra como invitado, abre Staff, crea su propia contraseña en el mismo UID y luego la sesión pendiente se elimina. Los campos usan `autocomplete="username"` y `autocomplete="new-password"` para que Chrome pueda ofrecer guardarla.
+La contraseña se crea al registrar la cuenta y Firebase la almacena de forma segura; la aplicación nunca la guarda en Realtime Database. Al asignar un rol, el usuario puede entrar a Staff con la misma contraseña.

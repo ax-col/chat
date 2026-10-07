@@ -30,9 +30,7 @@
   async function login(pw) {
     const remember = !!localStorage.getItem('nova-auth-local');
     let j;
-    const anonymous = Auth.isAnonymous() && Auth.uid() === me.uid;
-    if (anonymous && pw.length < 6) throw new Error('weak');
-    try { j = anonymous ? await Auth.link(me.name, pw, remember) : await Auth.login(me.name, pw, remember); } catch (e) {
+    try { j = await Auth.login(me.name, pw, remember); } catch (e) {
       const code = String(e.message || '');
       throw new Error(code.startsWith('TOO_MANY') ? 'many' : code === 'EMAIL_EXISTS' ? 'exists' : code === 'INVALID_ID_TOKEN' || code === 'CREDENTIAL_TOO_OLD_LOGIN_AGAIN' ? 'expired' : code === 'OPERATION_NOT_ALLOWED' ? 'disabled' : code === 'INVALID_EMAIL' ? 'email' : /INVALID|NOT_FOUND|PASSWORD/.test(code) ? 'bad' : 'net');
     }
@@ -57,8 +55,8 @@
   const relog = msg => { sessionStorage.removeItem(SK); fire(); loginView(msg); };
 
   function loginView(note) {
-    const creating = Auth.isAnonymous() && Auth.uid() === me.uid, assignedRole = Roles.of(me.name);
-    body.innerHTML = `<p class="muted" style="margin:0">${creating ? `Tu cuenta recibió el rol <b>${assignedRole}</b>. Crea una contraseña para activar la consola Staff.` : 'Acceso de staff para <b></b>. Usa la contraseña de tu cuenta.'}</p><label class="hint" for="astaff-user">Usuario</label><input class="in" id="astaff-user" value="${me.name}" autocomplete="username" readonly><label class="hint" for="apw">${creating ? 'Crea tu contraseña' : 'Contraseña'}</label><input class="in" type="password" id="apw" placeholder="${creating ? 'Mínimo 6 caracteres' : 'Contraseña'}" autocomplete="${creating ? 'new-password' : 'current-password'}"><button class="btn main" type="button" id="alog">${creating ? 'Crear contraseña y entrar' : 'Entrar'}</button><p class="err" id="amsg"></p>`;
+    const creating = false;
+    body.innerHTML = '<p class="muted" style="margin:0">Acceso de staff para <b></b>. Usa la misma contraseña con la que creaste tu cuenta.</p><label class="hint" for="astaff-user">Usuario</label><input class="in" id="astaff-user" value="' + me.name + '" autocomplete="username" readonly><label class="hint" for="apw">Contraseña</label><input class="in" type="password" id="apw" placeholder="Contraseña de tu cuenta" autocomplete="current-password"><button class="btn main" type="button" id="alog">Entrar</button><p class="err" id="amsg"></p>';
     const userLabel = body.querySelector('b'); if (userLabel && !creating) userLabel.textContent = '@' + me.name; $('amsg').textContent = note || '';
     const pw = $('apw'), go = $('alog');
     const run = async () => {
@@ -132,9 +130,9 @@
     const k = Store.key(u.name), uid = u.uid;
     if (!uid) throw new Error('auth');
     if (role === 'USER') { await api('DELETE', 'roles/' + k); await api('DELETE', 'staff/' + uid).catch(() => {}); await api('DELETE', 'staffSetup/' + uid).catch(() => {}); delete Roles.map[k]; await audit('change_role', u.name, 'USER'); return `@${u.name} ahora es USER.`; }
-    await api('PUT', 'staff/' + uid, role); await api('PUT', 'roles/' + k, role); await api('PUT', 'staffSetup/' + uid, true); Roles.map[k] = role;
+    await api('PUT', 'staff/' + uid, role); await api('PUT', 'roles/' + k, role); Roles.map[k] = role;
     await audit('change_role', u.name, role);
-    return `@${u.name} ahora es ${role}. Usará la misma contraseña con la que se registró.`;
+    return `@${u.name} ahora es ${role}. Usará la misma contraseña con la que creó su cuenta.`;
   }
 
   // ---------- Reportes y sanciones (MOD+) ----------
