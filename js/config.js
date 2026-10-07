@@ -8,7 +8,7 @@ window.NOVA = {
     apiKey: 'AIzaSyB15ghoM-diGu86QaxG8V64emBxDf-eZIg',              // "Clave de API web" de Firebase (es pública por diseño, no es un secreto)
     // Correo de Firebase Authentication de cada administrador (usuario en minúsculas → correo).
     emails: { andrex: 'ax@auth.com' },
-    owners: ['AndreX']       // dueño fijo: siempre OWNER. El botón ⚙ lo ven todos los que tengan rol (MOD, ADMIN, OWNER)
+    owners: ['AndreX_CO']       // dueño fijo: siempre OWNER. El botón ⚙ lo ven todos los que tengan rol (MOD, ADMIN, OWNER)
   },
   chat: { server: 'https://ntfy.sh', room: 'nova-global-sala-x7k2', history: '12h' },
   about: {
