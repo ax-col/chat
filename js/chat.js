@@ -4,8 +4,9 @@
   const dot = document.getElementById('status'), label = document.getElementById('statusText'), seen = new Set(), loadedAt = Date.now();
   const empty = document.createElement('li'); empty.className = 'empty'; empty.textContent = 'Aún no hay mensajes. Escribe el primero.'; list.append(empty);
   document.getElementById('who').textContent = '@' + me.name;
-  const up = () => { dot.classList.add('on'); label.textContent = 'En línea · sala global'; };
-  const down = t => { dot.classList.remove('on'); label.textContent = t || 'Reconectando…'; };
+  const setStatus = t => { if (label) label.textContent = t; };
+  const up = () => { dot.classList.add('on'); setStatus('En línea · sala global'); };
+  const down = t => { dot.classList.remove('on'); setStatus(t || 'Reconectando…'); };
 
   function paint(li) { const role = Roles.of(li.dataset.u); li.dataset.role = role; li.querySelector('.slot').replaceChildren(Roles.badge(role)); }
   const repaint = () => list.querySelectorAll('.msg').forEach(paint);
@@ -16,9 +17,11 @@
   async function reportMessage(id, n) {
     if (!Store.online) return alert('Los reportes requieren la base de datos conectada.');
     const reason = (prompt(`Motivo del reporte de @${n}:`, 'Contenido inapropiado') || '').trim(); if (!reason) return;
-    const tk = await Auth.token(); if (!tk) throw 0;
-    const r = await fetch(`${NOVA.db.url.replace(/\/$/, '')}/reports.json?auth=${encodeURIComponent(tk)}`, { method: 'POST', body: JSON.stringify({ messageId: id, n, reporter: Auth.uid(), reporterName: me.name, reason, ts: { '.sv': 'timestamp' }, status: 'open' }) });
-    if (!r.ok) throw 0; label.textContent = 'Reporte enviado al equipo.';
+    const body = JSON.stringify({ messageId: id, n, reporter: Auth.uid(), reporterName: me.name, reason, ts: { '.sv': 'timestamp' }, status: 'open' });
+    let tk = await Auth.token(); if (!tk) throw new Error('auth');
+    let r = await fetch(`${NOVA.db.url.replace(/\/$/, '')}/reports.json?auth=${encodeURIComponent(tk)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+    if (r.status === 401 || r.status === 403) { tk = await Auth.token(true); if (!tk) throw new Error('auth'); r = await fetch(`${NOVA.db.url.replace(/\/$/, '')}/reports.json?auth=${encodeURIComponent(tk)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }); }
+    if (!r.ok) throw new Error('report'); setStatus('Reporte enviado al equipo.');
   }
 
   function add({ id, n, t, ts }) {
@@ -30,9 +33,9 @@
     const p = document.createElement('span'); p.textContent = t;
     const tm = document.createElement('time'); tm.textContent = new Date(ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const report = document.createElement('button'); report.type = 'button'; report.className = 'report'; report.textContent = '⚑'; report.title = 'Reportar mensaje'; report.setAttribute('aria-label', 'Reportar mensaje'); report.hidden = n === me.name;
-    report.onclick = async () => { try { await reportMessage(id, n); } catch { label.textContent = 'No se pudo enviar el reporte.'; } };
+    report.onclick = async () => { try { await reportMessage(id, n); } catch (e) { down(e.message === 'auth' ? 'Sesión vencida. Recarga la página.' : 'No se pudo enviar el reporte.'); } };
     const del = document.createElement('button'); del.type = 'button'; del.className = 'del'; del.textContent = '×'; del.setAttribute('aria-label', 'Eliminar mensaje');
-    del.onclick = async () => { try { await Staff.deleteMessage(id); li.remove(); } catch { label.textContent = 'No se pudo eliminar. Inicia sesión de staff.'; } };
+    del.onclick = async () => { try { await Staff.deleteMessage(id); li.remove(); } catch { down('No se pudo eliminar. Inicia sesión de staff.'); } };
     li.append(head, p, tm, report, del); paint(li); list.append(li); list.scrollTop = list.scrollHeight; return true;
   }
   const drop = id => { const li = list.querySelector(`.msg[data-id="${CSS.escape(id)}"]`); if (li) li.remove(); };

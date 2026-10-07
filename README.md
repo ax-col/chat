@@ -41,3 +41,6 @@ no llegan avisos: eso requiere un servidor de notificaciones push (Firebase Clou
 - **USER** no necesita contraseña: entra como invitado con usuario y ubicación.
 - **MOD/ADMIN/OWNER**: primero entra como invitado; al abrir Staff, si su cuenta antigua no tiene contraseña, el panel le pedirá crearla. Esa contraseña se vincula a la misma identidad de Firebase y no crea un perfil duplicado.
 - Las cuentas que ya tienen contraseña pueden usar “Tengo contraseña” o “Entrar a Staff”.
+
+## 7. Configuración segura de Staff
+Cuando OWNER asigna MOD, ADMIN u OWNER, solo se guarda una marca booleana `staffSetup/{uid}`. Nunca se guarda ni se genera una contraseña en la base de datos. El usuario entra como invitado, abre Staff, crea su propia contraseña en el mismo UID y luego la sesión pendiente se elimina. Los campos usan `autocomplete="username"` y `autocomplete="new-password"` para que Chrome pueda ofrecer guardarla.

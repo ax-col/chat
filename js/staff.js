@@ -8,8 +8,13 @@
   const level = () => (sess() ? LV[sess().role] || 0 : 0);
   const fire = () => dispatchEvent(new Event('staff-change'));
   async function api(m, path, body) {
-    const s = sess(); if (!s) throw new Error('auth');
-    const r = await fetch(`${base}/${path}.json?auth=${enc(s.t)}`, { method: m, body: body === undefined ? undefined : JSON.stringify(body) });
+    let s = sess(); if (!s) throw new Error('auth');
+    const fresh = await Auth.token(); if (fresh && fresh !== s.t) { s = { ...s, t: fresh, exp: Date.now() + 3300e3 }; sessionStorage.setItem(SK, JSON.stringify(s)); }
+    const options = { method: m, headers: { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) };
+    let r = await fetch(`${base}/${path}.json?auth=${enc(s.t)}`, options);
+    if (r.status === 401 || r.status === 403) {
+      const retry = await Auth.token(true); if (retry) { s = { ...s, t: retry, exp: Date.now() + 3300e3 }; sessionStorage.setItem(SK, JSON.stringify(s)); r = await fetch(`${base}/${path}.json?auth=${enc(s.t)}`, options); }
+    }
     if (r.status === 401 || r.status === 403) throw new Error('auth'); if (!r.ok) throw new Error('net');
     return r.json().catch(() => null);
   }
@@ -29,12 +34,13 @@
     if (anonymous && pw.length < 6) throw new Error('weak');
     try { j = anonymous ? await Auth.link(me.name, pw, remember) : await Auth.login(me.name, pw, remember); } catch (e) {
       const code = String(e.message || '');
-      throw new Error(code.startsWith('TOO_MANY') ? 'many' : /INVALID|NOT_FOUND|PASSWORD/.test(code) ? 'bad' : 'net');
+      throw new Error(code.startsWith('TOO_MANY') ? 'many' : code === 'EMAIL_EXISTS' ? 'exists' : code === 'INVALID_ID_TOKEN' || code === 'CREDENTIAL_TOO_OLD_LOGIN_AGAIN' ? 'expired' : code === 'OPERATION_NOT_ALLOWED' ? 'disabled' : code === 'INVALID_EMAIL' ? 'email' : /INVALID|NOT_FOUND|PASSWORD/.test(code) ? 'bad' : 'net');
     }
     let role = Roles.fixed(me.name) ? 'OWNER' : null;
     if (!role) { const x = await fetch(`${base}/staff/${j.localId}.json?auth=${enc(j.idToken)}`); role = x.ok ? await x.json() : null; }
     if (!LV[role]) throw new Error('norole');
     sessionStorage.setItem(SK, JSON.stringify({ t: j.idToken, uid: j.localId, role, name: me.name, exp: Date.now() + 3300e3 }));
+    await api('DELETE', 'staffSetup/' + j.localId).catch(() => {});
     fire();
   }
 
@@ -51,14 +57,14 @@
   const relog = msg => { sessionStorage.removeItem(SK); fire(); loginView(msg); };
 
   function loginView(note) {
-    const creating = Auth.isAnonymous() && Auth.uid() === me.uid;
-    body.innerHTML = `<p class="muted" style="margin:0">${creating ? 'Esta cuenta antigua tiene rol de staff, pero todavía no tiene contraseña. Crea una para activar la consola.' : 'Acceso de staff para <b></b>. Usa la contraseña de tu cuenta.'}</p><input class="in" type="password" id="apw" placeholder="${creating ? 'Nueva contraseña (mínimo 6)' : 'Contraseña'}" autocomplete="${creating ? 'new-password' : 'current-password'}"><button class="btn main" type="button" id="alog">${creating ? 'Crear contraseña y entrar' : 'Entrar'}</button><p class="err" id="amsg"></p>`;
-    body.querySelector('b').textContent = '@' + me.name; $('amsg').textContent = note || '';
+    const creating = Auth.isAnonymous() && Auth.uid() === me.uid, assignedRole = Roles.of(me.name);
+    body.innerHTML = `<p class="muted" style="margin:0">${creating ? `Tu cuenta recibió el rol <b>${assignedRole}</b>. Crea una contraseña para activar la consola Staff.` : 'Acceso de staff para <b></b>. Usa la contraseña de tu cuenta.'}</p><label class="hint" for="astaff-user">Usuario</label><input class="in" id="astaff-user" value="${me.name}" autocomplete="username" readonly><label class="hint" for="apw">${creating ? 'Crea tu contraseña' : 'Contraseña'}</label><input class="in" type="password" id="apw" placeholder="${creating ? 'Mínimo 6 caracteres' : 'Contraseña'}" autocomplete="${creating ? 'new-password' : 'current-password'}"><button class="btn main" type="button" id="alog">${creating ? 'Crear contraseña y entrar' : 'Entrar'}</button><p class="err" id="amsg"></p>`;
+    const userLabel = body.querySelector('b'); if (userLabel && !creating) userLabel.textContent = '@' + me.name; $('amsg').textContent = note || '';
     const pw = $('apw'), go = $('alog');
     const run = async () => {
       if (!pw.value) return; go.disabled = true; $('amsg').textContent = '';
       try { await login(pw.value); pw.value = ''; home(); }
-      catch (e) { $('amsg').textContent = { bad: 'Contraseña incorrecta.', many: 'Demasiados intentos. Espera unos minutos.', weak: 'La contraseña debe tener mínimo 6 caracteres.', norole: 'Tu cuenta no tiene un rol de staff activo.' }[e.message] || 'No se pudo conectar. Intenta de nuevo.'; go.disabled = false; }
+      catch (e) { $('amsg').textContent = { bad: 'Contraseña incorrecta.', many: 'Demasiados intentos. Espera unos minutos.', weak: 'La contraseña debe tener mínimo 6 caracteres.', norole: 'Tu cuenta no tiene un rol de staff activo.', exists: 'Este usuario ya tiene una cuenta con contraseña. Cierra esta sesión invitada y entra a Staff con esa contraseña.', expired: 'La sesión invitada venció. Vuelve a entrar como invitado y abre Staff otra vez.', disabled: 'Firebase no permite crear cuentas con contraseña. Activa Correo/contraseña en Authentication.', email: 'El correo interno de esta cuenta no es válido. Revisa auth.emails en js/config.js.' }[e.message] || 'Firebase rechazó la creación de la contraseña. Revisa la configuración de Authentication.'; go.disabled = false; }
     };
     go.onclick = run; pw.addEventListener('keydown', e => { if (e.key === 'Enter') run(); }); pw.focus();
   }
@@ -125,8 +131,8 @@
   async function setRole(u, role) {
     const k = Store.key(u.name), uid = u.uid;
     if (!uid) throw new Error('auth');
-    if (role === 'USER') { await api('DELETE', 'roles/' + k); await api('DELETE', 'staff/' + uid).catch(() => {}); delete Roles.map[k]; await audit('change_role', u.name, 'USER'); return `@${u.name} ahora es USER.`; }
-    await api('PUT', 'staff/' + uid, role); await api('PUT', 'roles/' + k, role); Roles.map[k] = role;
+    if (role === 'USER') { await api('DELETE', 'roles/' + k); await api('DELETE', 'staff/' + uid).catch(() => {}); await api('DELETE', 'staffSetup/' + uid).catch(() => {}); delete Roles.map[k]; await audit('change_role', u.name, 'USER'); return `@${u.name} ahora es USER.`; }
+    await api('PUT', 'staff/' + uid, role); await api('PUT', 'roles/' + k, role); await api('PUT', 'staffSetup/' + uid, true); Roles.map[k] = role;
     await audit('change_role', u.name, role);
     return `@${u.name} ahora es ${role}. Usará la misma contraseña con la que se registró.`;
   }
